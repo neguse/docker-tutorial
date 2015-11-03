@@ -139,4 +139,92 @@ boring_galileo
 `docker stop`や`docker rm`コマンドでコンテナを停止・削除することができます。
 コマンドラインオプションで指定するコンテナ名は、コンテナIDでもコンテナ名でもよいです。
 
+# 2. イメージの作成
+
+前回はDocker Hubからイメージをダウンロードしてそのまま利用しましたが、
+今回はイメージを自分で作成(ビルド)してみます。
+とはいっても、イメージを1から自分で作るのは大変なので、
+既存のイメージからカスタマイズしたい部分だけ変更するという手法を使います。
+
+イメージを作成する方法はいくつかあるのですが、
+今回は最も正当法のような、Dockerfileを使う方法にします。
+
+今回作成するカスタムイメージは、[オフィシャルのnginxイメージ](https://hub.docker.com/_/nginx/)をカスタマイズして
+デフォルトのトップページを別のものにしてみます。
+
+2_myimage ディレクトリ以下に、今回作成するイメージの元となるファイル一式を用意しました。
+それぞれ順に説明していきます。
+
+Dockerfileはイメージ作成手順を示すもので、
+イメージをビルドする際に実行される命令を羅列したものです。
+詳しくは、[ドキュメント](https://docs.docker.com/reference/builder/)を参照してください。
+
+今回のDockerfileには、index.htmlをイメージに追加する命令ADDと、
+任意のコマンドを実行する命令RUNが記述されています。
+
+それでは、イメージをビルドしてみます。
+イメージのビルドには、`docker build`コマンドを利用します。
+
+```
+$ docker build -t myimage 2_myimage/
+Sending build context to Docker daemon 3.072 kB
+Step 0 : FROM nginx
+ ---> 914c82c5a678
+Step 1 : ADD index.html /usr/share/nginx/html/
+ ---> 586e412e51aa
+Removing intermediate container 91355d550459
+Step 2 : RUN date > /usr/share/nginx/html/date.txt
+ ---> Running in 6fd8df84e254
+ ---> 3eaa4e8b041e
+Removing intermediate container 6fd8df84e254
+Successfully built 3eaa4e8b041e
+SECURITY WARNING: You are building a Docker image from Windows against a non-Windows Docker host. All files and directories added to build context will have '-rwxr-xr-x' permissions. It is recommended to double check and reset permissions for sensitive files and directories.
+```
+
+ここでは、2_myimageディレクトリ以下にあるDockerfileを用いてイメージmyimageをビルドすることを指示しています。
+ビルドの各Stepでは、Dockerfileに書かれたそれぞれの命令が実行されていることがわかるかと思います。
+
+イメージがビルドできたので、起動してみましょう。
+
+```
+$ docker run -dit -p 8080:80 myimage
+2a8167fcc122a14c6d659bb3aaf68165a1e619a842398e186263806c1043d766
+
+$ start http://192.168.99.100:8080/
+```
+
+「こんにちはDocker!」と書かれたindexページが表示されたかと思います。
+これでカスタムイメージができました。
+
+次に進む前に、以下のコマンドを実行して作成済みコンテナをすべて削除します。
+このコマンドは、コンテナをリストアップする`docker ps`コマンドと、コンテナを削除する`docker rm`コマンドを組み合わせたものです。
+
+```
+$ docker rm -f `docker ps -qa`
+2a8167fcc122
+```
+
+次に、再度`docker build`を実行してみてください。
+実行ログを前回のものと比較してみましょう。
+
+```
+$ docker build -t myimage 2_myimage/
+Sending build context to Docker daemon 3.072 kB
+Step 0 : FROM nginx
+ ---> 914c82c5a678
+Step 1 : ADD index.html /usr/share/nginx/html/
+ ---> Using cache
+ ---> 72ee4187bc64
+Step 2 : RUN date > /usr/share/nginx/html/date.txt
+ ---> Using cache
+ ---> f6733f985890
+Successfully built f6733f985890
+SECURITY WARNING: You are building a Docker image from Windows against a non-Windows Docker host. All files and directories added to build context will have '-rwxr-xr-x' permissions. It is recommended to double check and reset permissions for sensitive files and directories.
+```
+
+「Using cache」と出力されています。
+これは、`docker build`では各手順の結果が変わらない(と思われる)場合、前回ビルド時のキャッシュが使われるという機能が働いたことを意味しています。
+このキャッシュの仕組みがあるため、部分的にDockerfileを変更した場合のビルドは比較的短時間で済むケースが多く、
+トライアンドエラーが非常にやりやすいです。
+便利ですねー。
 
