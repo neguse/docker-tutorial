@@ -245,3 +245,88 @@ Dockerでは1ホストで複数のコンテナを動かすことができます�
 このサンプルは、1ホストで複数のアプリケーションを異なるサブURLで公開しつつ
 フロントサーバでまとめてBASIC認証をかける、というものです。
 
+まず、Docker Composeを使ってコンテナ郡を起動しましょう。
+
+```
+$ winpty docker-compose -f 3_compose/docker-compose.yml up -d
+Creating 3compose_app2_1
+Building app1
+Step 0 : FROM nginx
+ ---> 914c82c5a678
+Step 1 : ADD index.html /usr/share/nginx/html/
+ ---> db9795001c46
+Removing intermediate container 62d04d8c6621
+Step 2 : RUN date > /usr/share/nginx/html/date.txt
+ ---> Running in c6d28c3b6f9b
+ ---> c867d110d639
+Removing intermediate container c6d28c3b6f9b
+Successfully built c867d110d639
+Creating 3compose_app1_1
+Building front
+Step 0 : FROM nginx
+ ---> 914c82c5a678
+Step 1 : ADD index.html /usr/share/nginx/html/
+ ---> 9e511e695835
+Removing intermediate container 86d05e041f8d
+Step 2 : ADD default.conf /etc/nginx/conf.d/default.conf
+ ---> 0bd1ee5d08d1
+Removing intermediate container e3a73ee721a3
+Step 3 : ADD app1.htpasswd /etc/nginx/conf.d/
+ ---> 61f38aa0703f
+Removing intermediate container 97b22b7605ca
+Step 4 : ADD app2.htpasswd /etc/nginx/conf.d/
+ ---> 8a5259c431b8
+Removing intermediate container 131cf75f1b14
+Successfully built 8a5259c431b8
+Creating 3compose_front_1
+
+$ start http://192.168.99.100:8080/
+```
+
+`docker-compose up`により、必要なイメージがビルドされ、コンテナがまとめて起動されました。
+
+フロントサーバのトップページが表示され、app1、app2のリンクが表示されたと思います。
+それぞれのアプリのリンクを踏むとBASIC認証の
+ユーザ名、パスワードを要求されるはずです。
+app1はapp1:app1, app2はapp2:app2で認証が通ります。
+
+それでは、構成を見ていきましょう。
+docker-compose.ymlファイルに、コンテナの構成が記述されています。
+
+docker-compose.ymlファイルはYAML形式で記述されたもので、
+今回の例では front, app1, app2 それぞれがコンテナを意味しています。
+
+次に、frontのnginxの設定ファイル front/default.confを見てみます。
+このファイルが具体的なリバースプロキシとBASIC認証を行う設定になっています。
+コンテナのリンクをした場合、リンク時に指定した名前でDNS名前解決できるようになっているので
+proxy_passはhttp://app1/, http://app2/ という表記になっています。
+
+app1, app2それぞれは特に前回までのチュートリアルと変わっているものではないので
+説明は省きます。
+
+ここで見たように、docker-composeを利用すると
+複数のコンテナをビルド・起動する場合でもそれぞれを個別に操作することなく
+一括でビルド・起動することができます。
+
+最後に、docker-composeで起動したコンテナを削除します。
+
+```
+$ winpty docker-compose -f 3_compose/docker-compose.yml kill
+Killing 3compose_front_1 ...
+Killing 3compose_app1_1 ...
+Killing 3compose_app2_1 ...
+Killing 3compose_front_1 ... done
+Killing 3compose_app2_1 ... done
+Killing 3compose_app1_1 ... done
+
+$ winpty docker-compose -f 3_compose/docker-compose.yml rm
+Going to remove 3compose_front_1, 3compose_app1_1, 3compose_app2_1
+Are you sure? [yN] y
+Removing 3compose_front_1 ...
+Removing 3compose_app1_1 ...
+Removing 3compose_app2_1 ...
+Removing 3compose_front_1 ... done
+Removing 3compose_app1_1 ... done
+Removing 3compose_app2_1 ... done
+```
+

@@ -1,13 +1,28 @@
 
+# front用コンテナ。ここでBASIC認証をかける。
 front:
+
+    # frontディレクトリにあるDockerfileを使ってイメージをビルドする
     build: front
+
+    # linksを指定することでfrontコンテナからはapp1, app2コンテナの公開ポートにアクセスできる
+    # (docker runの-linkオプションと同じ)
     links:
         - app1
         - app2
+
+    # portsでホストから公開するポートを指定する
+    # (docker runの-pオプションと同じ)
     ports:
         - 8080:80
+
+# アプリ用コンテナ1
 app1:
+    # app1ディレクトリにあるDockerfileを使ってビルドする
     build: app1
+
+# アプリ用コンテナ2
 app2:
+    # 既存のイメージをそのまま使う場合、imageでイメージ名を指定する
     image: nginx
 
