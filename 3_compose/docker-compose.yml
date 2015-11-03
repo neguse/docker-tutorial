@@ -1,0 +1,13 @@
+
+front:
+    build: front
+    links:
+        - app1
+        - app2
+    ports:
+        - 8080:80
+app1:
+    build: app1
+app2:
+    image: nginx
+

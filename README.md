@@ -46,6 +46,13 @@ NOTE: When using interactive commands, prepend winpty. Examples: 'winpty docker 
 このコンソールウィンドウにコマンドを入力していろいろやっていくことになります。
 ここで`IP 192.168.99.100`とIPアドレスが表示されるので、覚えておいてください。
 
+次に、Docker Composeというツールをインストールします。
+このツールは、現在Windows版が正式にはリリースされていないため手動で入れる必要があります。
+そのうちDocker Toolboxで一種にインストールされるようになると思います。
+
+[Docker Compose - Release](https://github.com/docker/compose/releases)からWindows版のexeをダウンロードして、
+`C:\Program Files\Git\mingw64\bin` ディレクトリに`docker-compose.exe`というファイル名でコピーしておきます。
+
 また、docker-tutorialのリポジトリを`git clone`しておいてください。
 このコンソールは`msys`のコンソールとなっていて、Windowsとパス表記が異なるのですが、
 以下のように読み替えてcloneしたリポジトリのディレクトリにcdします。
@@ -227,4 +234,14 @@ SECURITY WARNING: You are building a Docker image from Windows against a non-Win
 このキャッシュの仕組みがあるため、部分的にDockerfileを変更した場合のビルドは比較的短時間で済むケースが多く、
 トライアンドエラーが非常にやりやすいです。
 便利ですねー。
+
+# 3. Docker Composeを使った複数コンテナの管理
+
+Dockerでは1ホストで複数のコンテナを動かすことができますが、
+1個ずつ`docker run`していく方法だとめんどくさいです。
+そういう場合にはDocker Composeを使うと便利です。
+
+今回もサンプルを3_composeディレクトリに用意してあります。
+このサンプルは、1ホストで複数のアプリケーションを異なるサブURLで公開しつつ
+フロントサーバでまとめてBASIC認証をかける、というものです。
 
